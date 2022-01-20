@@ -38,7 +38,7 @@ namespace WpfSnake
         private UIElement snakeFood = null;
         private SolidColorBrush foodBrush = Brushes.Red;
 
-        private int snakeLength;
+
         private int currentScore = 0;
 
 
@@ -65,7 +65,7 @@ namespace WpfSnake
                 {
                     Width = SnakeSquareSize,
                     Height = SnakeSquareSize,
-                    Fill = nextIsOdd ? Brushes.White : Brushes.Black
+                    Fill = nextIsOdd ? Brushes.White : Brushes.Gray
                 };
                 GameArea.Children.Add(rect);
                 Canvas.SetTop(rect, nextY);
