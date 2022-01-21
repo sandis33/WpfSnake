@@ -16,6 +16,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Xml.Serialization;
 using System.Speech.Synthesis;
+using System.Media;
 
 namespace WpfSnake
 {
@@ -278,7 +279,7 @@ namespace WpfSnake
         }
         private void EatSnakeFood()
         {
-            speechSynthesizer.SpeakAsync("yummy");
+            PlayEatSound();
             snakeLength++;
             currentScore++;
             int timerInterval = Math.Max(SnakeSpeedThreshold, (int)gameTickTimer.Interval.TotalMilliseconds - (currentScore * 2));
@@ -391,15 +392,13 @@ namespace WpfSnake
             Emphasis = PromptEmphasis.Reduced,  
             Rate = PromptRate.Slow,  
             Volume = PromptVolume.ExtraLoud  
-            });  
-            promptBuilder.AppendText("oh no");  
-            promptBuilder.AppendBreak(TimeSpan.FromMilliseconds(200));  
-            promptBuilder.AppendText("you died");  
+            });
+            PlayDeathSound();
             promptBuilder.EndStyle();  
 
             if(isNewHighscore)  
             {  
-            promptBuilder.AppendBreak(TimeSpan.FromMilliseconds(500));  
+            promptBuilder.AppendBreak(TimeSpan.FromMilliseconds(1000));  
             promptBuilder.StartStyle(new PromptStyle()  
             {  
                 Emphasis = PromptEmphasis.Moderate,  
@@ -412,6 +411,21 @@ namespace WpfSnake
             promptBuilder.EndStyle();  
             }  
             speechSynthesizer.SpeakAsync(promptBuilder);  
+        }
+        private void PlayEatSound()
+        {
+            SoundPlayer eatSound = new SoundPlayer(Properties.Resources.eatfood);
+            eatSound.Play();
+        }
+        private void PlayDeathSound()
+        {
+            SoundPlayer deathSound = new SoundPlayer(Properties.Resources.death);
+            deathSound.Play();
+        }
+        //private void PlayBackgroundMusic()
+        //{
+        //    SoundPlayer backgroundMusic = new SoundPlayer(Properties.Resources.backgroundmusic);
+        //    backgroundMusic.PlayLooping();
         }
     }
     public class SnakeHighscore
