@@ -231,19 +231,19 @@ namespace WpfSnake
             SnakeDirection originalSnakeDirection = snakeDirection;
             switch (e.Key)
             {
-                case Key.Up:
+                case Key.Up or Key.W:
                     if (snakeDirection != SnakeDirection.Down)
                         snakeDirection = SnakeDirection.Up;
                     break;
-                case Key.Down:
+                case Key.Down or Key.S:
                     if (snakeDirection != SnakeDirection.Up)
                         snakeDirection = SnakeDirection.Down;
                     break;
-                case Key.Left:
+                case Key.Left or Key.A:
                     if (snakeDirection != SnakeDirection.Right)
                         snakeDirection = SnakeDirection.Left;
                     break;
-                case Key.Right:
+                case Key.Right or Key.D:
                     if (snakeDirection != SnakeDirection.Left)
                         snakeDirection = SnakeDirection.Right;
                     break;
