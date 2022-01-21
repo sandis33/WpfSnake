@@ -6,15 +6,13 @@
     xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase"
     Title="SnakeWPF - Score: 0" SizeToContent="WidthAndHeight" ContentRendered="Window_ContentRendered" KeyUp="Window_KeyUp"
     ResizeMode="NoResize" WindowStyle="None" Background="Black" MouseDown="Window_MouseDown">
-
     <Window.Resources>
-        <CollectionViewSource Source="{Binding ElementName=window, Path=snake_highscorelist}" x:Key="HighScoreListViewSource">
+        <CollectionViewSource Source="{Binding Path=HighscoreList, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Window}}" x:Key="HighScoreListViewSource">
             <CollectionViewSource.SortDescriptions>
                 <scm:SortDescription Direction="Descending" PropertyName="Score" />
             </CollectionViewSource.SortDescriptions>
         </CollectionViewSource>
     </Window.Resources>
-
     <Border BorderBrush="Black" BorderThickness="5">
         <DockPanel Background="Black">
             <Grid DockPanel.Dock="Top" Name="pnlTitleBar">
@@ -23,7 +21,6 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-
                 <Grid.Resources>
                     <Style TargetType="TextBlock">
                         <Setter Property="FontFamily" Value="Consolas" />
@@ -32,7 +29,6 @@
                         <Setter Property="FontWeight" Value="Bold" />
                     </Style>
                 </Grid.Resources>
-
                 <WrapPanel Margin="10,0,0,0">
                     <TextBlock>Score:</TextBlock>
                     <TextBlock Name="tbStatusScore">0</TextBlock>
@@ -93,7 +89,6 @@
             </Border>
         </DockPanel>
     </Border>
-
 </Window>
 
 
