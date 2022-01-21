@@ -15,6 +15,7 @@ using System.Windows.Shapes;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Xml.Serialization;
+using System.Speech.Synthesis;
 
 namespace WpfSnake
 {
@@ -45,9 +46,9 @@ namespace WpfSnake
         private UIElement snakeFood = null;
         private SolidColorBrush foodBrush = Brushes.Red;
 
-
         private int currentScore = 0;
 
+        private SpeechSynthesizer speechSynthesizer = new SpeechSynthesizer();
 
         public MainWindow()
         {
@@ -277,6 +278,7 @@ namespace WpfSnake
         }
         private void EatSnakeFood()
         {
+            speechSynthesizer.SpeakAsync("yummy");
             snakeLength++;
             currentScore++;
             int timerInterval = Math.Max(SnakeSpeedThreshold, (int)gameTickTimer.Interval.TotalMilliseconds - (currentScore * 2));
@@ -309,6 +311,7 @@ namespace WpfSnake
                 bdrEndOfGame.Visibility = Visibility.Visible;
             }
             gameTickTimer.IsEnabled = false;
+            SpeakEndOfGameInfo(isNewHighscore);
         }
 
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
@@ -378,6 +381,37 @@ namespace WpfSnake
 
             bdrNewHighscore.Visibility = Visibility.Collapsed;
             bdrHighscoreList.Visibility = Visibility.Visible;
+        }
+        private void SpeakEndOfGameInfo(bool isNewHighscore)  
+        {  
+            PromptBuilder promptBuilder = new PromptBuilder();  
+
+            promptBuilder.StartStyle(new PromptStyle()  
+            {  
+            Emphasis = PromptEmphasis.Reduced,  
+            Rate = PromptRate.Slow,  
+            Volume = PromptVolume.ExtraLoud  
+            });  
+            promptBuilder.AppendText("oh no");  
+            promptBuilder.AppendBreak(TimeSpan.FromMilliseconds(200));  
+            promptBuilder.AppendText("you died");  
+            promptBuilder.EndStyle();  
+
+            if(isNewHighscore)  
+            {  
+            promptBuilder.AppendBreak(TimeSpan.FromMilliseconds(500));  
+            promptBuilder.StartStyle(new PromptStyle()  
+            {  
+                Emphasis = PromptEmphasis.Moderate,  
+                Rate = PromptRate.Medium,  
+                Volume = PromptVolume.Medium  
+            });  
+            promptBuilder.AppendText("new high score:");  
+            promptBuilder.AppendBreak(TimeSpan.FromMilliseconds(200));  
+            promptBuilder.AppendTextWithHint(currentScore.ToString(), SayAs.NumberCardinal);  
+            promptBuilder.EndStyle();  
+            }  
+            speechSynthesizer.SpeakAsync(promptBuilder);  
         }
     }
     public class SnakeHighscore
