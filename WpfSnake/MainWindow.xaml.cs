@@ -16,14 +16,12 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Xml.Serialization;
 using System.Speech.Synthesis;
+using NAudio;
+using NAudio.Wave;
 using System.Media;
 
 namespace WpfSnake
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
-
     public partial class MainWindow : Window
     {
 
@@ -115,22 +113,17 @@ namespace WpfSnake
         }
         private void MoveSnake()
         {
-            // Remove the last part of the snake, in preparation of the new part added below  
             while (snakeParts.Count >= snakeLength)
             {
                 GameArea.Children.Remove(snakeParts[0].UiElement);
                 snakeParts.RemoveAt(0);
             }
-            // Next up, we'll add a new element to the snake, which will be the (new) head  
-            // Therefore, we mark all existing parts as non-head (body) elements and then  
-            // we make sure that they use the body brush  
             foreach (SnakePart snakePart in snakeParts)
             {
                 (snakePart.UiElement as Rectangle).Fill = snakeBodyBrush;
                 snakePart.IsHead = false;
             }
 
-            // Determine in which direction to expand the snake, based on the current direction  
             SnakePart snakeHead = snakeParts[snakeParts.Count - 1];
             double nextX = snakeHead.Position.X;
             double nextY = snakeHead.Position.Y;
@@ -149,16 +142,14 @@ namespace WpfSnake
                     nextY += SnakeSquareSize;
                     break;
             }
-
-            // Now add the new head part to our list of snake parts...  
+ 
             snakeParts.Add(new SnakePart()
             {
                 Position = new Point(nextX, nextY),
                 IsHead = true
             });
-            //... and then have it drawn!  
+
             DrawSnake();
-            // Checks for collisions
             DoCollisionCheck();
         }
         private void GameTickTimer_Tick(object sender, EventArgs e)
@@ -171,7 +162,6 @@ namespace WpfSnake
             bdrHighscoreList.Visibility = Visibility.Collapsed;
             bdrEndOfGame.Visibility = Visibility.Collapsed;
 
-            // Remove potential dead snake parts and leftover food...
             foreach (SnakePart snakeBodyPart in snakeParts)
             {
                 if (snakeBodyPart.UiElement != null)
@@ -181,21 +171,17 @@ namespace WpfSnake
             if (snakeFood != null)
                 GameArea.Children.Remove(snakeFood);
 
-            // Reset stuff
             currentScore = 0;
             snakeLength = SnakeStartLength;
             snakeDirection = SnakeDirection.Right;
             snakeParts.Add(new SnakePart() { Position = new Point(SnakeSquareSize * 5, SnakeSquareSize * 5) });
             gameTickTimer.Interval = TimeSpan.FromMilliseconds(SnakeStartSpeed);
 
-            // Draw the snake again and some new food...
             DrawSnake();
             DrawSnakeFood();
-
-            // Update status
             UpdateGameStatus();
-
-            // Go!        
+            StartBackgroundMusic();
+   
             gameTickTimer.IsEnabled = true;
         }
         private Point GetNextFoodPosition()
@@ -312,6 +298,7 @@ namespace WpfSnake
                 bdrEndOfGame.Visibility = Visibility.Visible;
             }
             gameTickTimer.IsEnabled = false;
+            StopBackgroundMusic();
             SpeakEndOfGameInfo(isNewHighscore);
         }
 
@@ -383,34 +370,34 @@ namespace WpfSnake
             bdrNewHighscore.Visibility = Visibility.Collapsed;
             bdrHighscoreList.Visibility = Visibility.Visible;
         }
-        private void SpeakEndOfGameInfo(bool isNewHighscore)  
-        {  
-            PromptBuilder promptBuilder = new PromptBuilder();  
+        private void SpeakEndOfGameInfo(bool isNewHighscore)
+        {
+            PromptBuilder promptBuilder = new PromptBuilder();
 
-            promptBuilder.StartStyle(new PromptStyle()  
-            {  
-            Emphasis = PromptEmphasis.Reduced,  
-            Rate = PromptRate.Slow,  
-            Volume = PromptVolume.ExtraLoud  
+            promptBuilder.StartStyle(new PromptStyle()
+            {
+                Emphasis = PromptEmphasis.Reduced,
+                Rate = PromptRate.Slow,
+                Volume = PromptVolume.ExtraLoud
             });
             PlayDeathSound();
-            promptBuilder.EndStyle();  
+            promptBuilder.EndStyle();
 
-            if(isNewHighscore)  
-            {  
-            promptBuilder.AppendBreak(TimeSpan.FromMilliseconds(1000));  
-            promptBuilder.StartStyle(new PromptStyle()  
-            {  
-                Emphasis = PromptEmphasis.Moderate,  
-                Rate = PromptRate.Medium,  
-                Volume = PromptVolume.Medium  
-            });  
-            promptBuilder.AppendText("new high score:");  
-            promptBuilder.AppendBreak(TimeSpan.FromMilliseconds(200));  
-            promptBuilder.AppendTextWithHint(currentScore.ToString(), SayAs.NumberCardinal);  
-            promptBuilder.EndStyle();  
-            }  
-            speechSynthesizer.SpeakAsync(promptBuilder);  
+            if (isNewHighscore)
+            {
+                promptBuilder.AppendBreak(TimeSpan.FromMilliseconds(1000));
+                promptBuilder.StartStyle(new PromptStyle()
+                {
+                    Emphasis = PromptEmphasis.Moderate,
+                    Rate = PromptRate.Medium,
+                    Volume = PromptVolume.Medium
+                });
+                promptBuilder.AppendText("new high score:");
+                promptBuilder.AppendBreak(TimeSpan.FromMilliseconds(200));
+                promptBuilder.AppendTextWithHint(currentScore.ToString(), SayAs.NumberCardinal);
+                promptBuilder.EndStyle();
+            }
+            speechSynthesizer.SpeakAsync(promptBuilder);
         }
         private void PlayEatSound()
         {
@@ -422,17 +409,80 @@ namespace WpfSnake
             SoundPlayer deathSound = new SoundPlayer(Properties.Resources.death);
             deathSound.Play();
         }
-        //private void PlayBackgroundMusic()
-        //{
-        //    SoundPlayer backgroundMusic = new SoundPlayer(Properties.Resources.backgroundmusic);
-        //    backgroundMusic.PlayLooping();
+        private WaveOut waveOut;
+
+        private void StartBackgroundMusic()
+        {
+            if (waveOut == null)
+            {
+                WaveFileReader reader = new WaveFileReader(Properties.Resources.backgroundmusic);
+                LoopStream loop = new LoopStream(reader);
+                waveOut = new WaveOut();
+                waveOut.Init(loop);
+                waveOut.Play();
+            }
+        }
+        private void StopBackgroundMusic()
+        {
+            if (gameTickTimer.IsEnabled == false && waveOut != null)
+            {
+                waveOut.Stop();
+                waveOut.Dispose();
+                waveOut = null;
+            }
+        }
+    }
+    public class LoopStream : WaveStream
+    {
+        WaveStream sourceStream;
+
+        public LoopStream(WaveStream sourceStream)
+        {
+            this.sourceStream = sourceStream;
+            this.EnableLooping = true;
+        }
+
+        public bool EnableLooping { get; set; }
+
+        public override WaveFormat WaveFormat
+        {
+            get { return sourceStream.WaveFormat; }
+        }
+        public override long Length
+        {
+            get { return sourceStream.Length; }
+        }
+        public override long Position
+        {
+            get { return sourceStream.Position; }
+            set { sourceStream.Position = value; }
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            int totalBytesRead = 0;
+
+            while (totalBytesRead < count)
+            {
+                int bytesRead = sourceStream.Read(buffer, offset + totalBytesRead, count - totalBytesRead);
+                if (bytesRead == 0)
+                {
+                    if (sourceStream.Position == 0 || !EnableLooping)
+                    {
+                        break;
+                    }
+                    sourceStream.Position = 0;
+                }
+                totalBytesRead += bytesRead;
+            }
+            return totalBytesRead;
         }
     }
     public class SnakeHighscore
     {
-            public string PlayerName { get; set; }
+        public string PlayerName { get; set; }
 
-            public int Score { get; set; }
-     
+        public int Score { get; set; }
+
     }
 }
